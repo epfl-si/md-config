@@ -3,18 +3,21 @@ name: master CI
 on: 
     workflow_call:
       inputs:
-        name: 
-          description: 'Name for greeting'
-          required: true
-          type: 'string'
-      outputs:
-        greetingMessage: 
-          description: 'Generated greeting message'
-          value: "message"
+       username:
+        description: 'A username passed from the caller workflow'
+        default: 'john-doe'
+        required: false
+        type: string
 
 jobs:
-    greet:
+    coucou:
       runs-on: ubuntu-latest
       steps:
-      - id: greeting
-        run: echo "Coucou"
+       - id: greeting
+         run: echo "Coucou"
+        
+    print-username:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Print the input name to STDOUT
+            run: echo The username is ${{ inputs.username }}
