@@ -1,4 +1,4 @@
-name: master CI
+name: example CI
 
 on: 
     workflow_call:
@@ -20,4 +20,4 @@ jobs:
         runs-on: ubuntu-latest
         steps:
           - name: Print the input name to STDOUT
-            run: echo The username is ${{ inputs.username }}
+            run: ${{ github.actor }}
