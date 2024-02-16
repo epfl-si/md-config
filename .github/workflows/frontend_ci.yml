@@ -82,11 +82,6 @@ jobs:
     environment: development
 
     steps:
-      - name: Test env variables and secrets
-        run: |
-          echo ${{ secrets.registry_token }}
-          echo ${{ inputs.registry_username }}
-
       - name: Checkout code
         uses: actions/checkout@v3
         with:
