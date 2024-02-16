@@ -47,23 +47,6 @@ jobs:
         with:
           doit: false
 
-      - name: Update version in package.json
-        if: steps.future-tag.outputs.newtag != 'none'
-        run: |
-          sed -e 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "${{ steps.future-tag.outputs.newtag }}"/' package.json > /tmp/package.json
-          mv /tmp/package.json package.json
-          cat package.json
-
-      - name: add, commit modified package.json
-        if: steps.future-tag.outputs.newtag != 'none'
-        run: |
-          git config --global user.name 'EPFL'
-          git config --global user.email 'no-reply@epfl.ch'
-          git status
-          git add package.json
-          git status
-          git commit --allow-empty -m "Update version in package.json"
-
       - name: Tag
         if: steps.future-tag.outputs.newtag != 'none'
         id: tag-current
