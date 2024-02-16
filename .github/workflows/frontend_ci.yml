@@ -1,0 +1,82 @@
+name: master frontend CI
+
+env:
+  NODE_OPTIONS: --max-old-space-size=6144
+  NODE_VERSION: '20.2.x'
+
+on: 
+    workflow_call:
+      inputs:
+       infra_repository:
+        description: "Path to infrastructure repository"
+        required: true
+        type: string
+       run_e2e:
+        description: "Boolean to run e2e test"
+        required: false
+        default: false
+        type: boolean
+      # secrets:
+      #   ghrc_token:
+      #     description: 'GitHub Registry Token'
+      #     required: true
+
+jobs:
+  e2e:
+    name: E2E testing
+    runs-on: ubuntu-latest
+    if: ${{ inputs.run_e2e }} == true
+    steps:
+     - id: greeting
+       run: echo "E2E is runnning !"
+
+  tag:
+    runs-on: ubuntu-latest
+    name: Tag
+    outputs:
+      newtag: ${{ steps.tag-current.outputs.newtag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get future tag
+        id: future-tag
+        uses: epfl-si/autotag-action@1.0
+        with:
+          doit: false
+
+      - name: Update version in package.json
+        if: steps.future-tag.outputs.newtag != 'none'
+        run: |
+          sed -e 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "${{ steps.future-tag.outputs.newtag }}"/' package.json > /tmp/package.json
+          mv /tmp/package.json package.json
+          cat package.json
+
+      - name: add, commit modified package.json
+        if: steps.future-tag.outputs.newtag != 'none'
+        run: |
+          git config --global user.name 'EPFL'
+          git config --global user.email 'no-reply@epfl.ch'
+          git status
+          git add package.json
+          git status
+          git commit --allow-empty -m "Update version in package.json"
+
+      - name: Tag
+        if: steps.future-tag.outputs.newtag != 'none'
+        id: tag-current
+        uses: epfl-si/autotag-action@1.0
+        with:
+          doit: true
+          branch: $BRANCH_NAME
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+      - name: Push
+        if: steps.future-tag.outputs.newtag != 'none'
+        run: |
+          git push origin $BRANCH_NAME
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
