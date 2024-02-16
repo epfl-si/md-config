@@ -27,6 +27,8 @@ on:
       secrets:
         registry_token:
           required: true
+        os_registry_token:
+          required: true
 
 jobs:
   e2e:
@@ -82,10 +84,8 @@ jobs:
     steps:
       - name: Test env variables and secrets
         run: |
-          echo "${{ secrets.TEST_REGISTRY_TOKEN }}"
-          echo "${{ vars.TEST_REGISTRY_USERNAME }}"
-          echo "${{ secrets.registry_token }}"
-          echo "${{ inputs.registry_username }}"
+          echo ${{ secrets.registry_token }}
+          echo ${{ inputs.registry_username }}
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -115,3 +115,14 @@ jobs:
         if: steps.tag-current.outputs.newtag != 'none'
         run: |
           docker push ghcr.io/${{ github.repository }}:develop
+
+      - name: Log in to the Openshift registry
+        uses: docker/login-action@v2
+        with:
+          registry: os-docker-registry.epfl.ch
+          username: serviceaccount
+          password: ${{ secrets.os_registry_token }}
+
+          
+
+    
