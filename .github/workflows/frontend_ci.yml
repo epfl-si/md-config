@@ -81,7 +81,7 @@ jobs:
       - name: Test env variables and secrets
         run: |
           echo ${{ secrets.TEST_REGISTRY_TOKEN }}
-          echo ${{ env.TEST_REGISTRY_USERNAME }}
+          echo ${{ vars.TEST_REGISTRY_USERNAME }}
 
       - name: Checkout code
         uses: actions/checkout@v3
