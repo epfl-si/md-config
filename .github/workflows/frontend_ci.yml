@@ -28,7 +28,11 @@ jobs:
     if: ${{ inputs.run_e2e }} == true
     steps:
      - id: greeting
-       run: echo "E2E is runnning !"
+       run: |
+        echo "E2E is runnning !"
+        echo ${{ github.head_ref }} 
+        echo ${{ github.ref_name }}
+
 
   tag:
     runs-on: ubuntu-latest
