@@ -82,6 +82,8 @@ jobs:
     steps:
       - name: Test env variables and secrets
         run: |
+          echo "${{ secrets.TEST_REGISTRY_TOKEN }}"
+          echo "${{ vars.TEST_REGISTRY_USERNAME }}"
           echo "${{ secrets.registry_token }}"
           echo "${{ inputs.registry_username }}"
 
