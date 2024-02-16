@@ -12,13 +12,18 @@ on:
         required: true
         type: string
        run_e2e:
-        description: "Boolean to run e2e test"
+        description: "Boolean to run e2e test job"
         required: false
         default: false
         type: boolean
+       run_tag:
+        description: "Boolean to run tag job"
+        required: false
+        default: true
+        type: boolean
       # secrets:
-      #   ghrc_token:
-      #     description: 'GitHub Registry Token'
+      #   token:
+      #     description: 'Toto Token'
       #     required: true
 
 jobs:
@@ -27,12 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ inputs.run_e2e }} == true
     steps:
-     - id: greeting
+     - id: e2e
        run: |
         echo "E2E is runnning !"
-        echo ${{ github.head_ref }} 
-        echo ${{ github.ref_name }}
-
 
   tag:
     runs-on: ubuntu-latest
@@ -67,3 +69,39 @@ jobs:
           git push origin $BRANCH_NAME
         env:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+  deploy-development:
+    name: Deploy to development
+    #needs: [ e2e ]
+    runs-on: self-hosted
+    environment: development
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        if: steps.tag-current.outputs.newtag != 'none'
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GHCR
+        if: steps.tag-current.outputs.newtag != 'none'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and tag
+        if: steps.tag-current.outputs.newtag != 'none'
+        run: |
+          docker build -t ${{ github.event.repository.name }} .
+          docker image tag ${{ github.event.repository.name }}:latest ghcr.io/${{ github.repository }}:develop
+
+      - name: Push to GHCR
+        if: steps.tag-current.outputs.newtag != 'none'
+        run: |
+          docker push ghcr.io/${{ github.repository }}:develop
