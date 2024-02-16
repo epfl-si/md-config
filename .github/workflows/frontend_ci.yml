@@ -21,15 +21,10 @@ on:
         required: false
         default: true
         type: boolean
-       registry_username:
-          type: string
-          required: true
        os_registry_username:
           type: string
           required: true
       secrets:
-        registry_token:
-          required: true
         os_registry_token:
           required: true
 
@@ -120,7 +115,3 @@ jobs:
           registry: os-docker-registry.epfl.ch
           username: ${{ inputs.os_registry_username }}
           password: ${{ secrets.os_registry_token }}
-
-          
-
-    
