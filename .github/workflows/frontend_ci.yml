@@ -21,10 +21,12 @@ on:
         required: false
         default: true
         type: boolean
-      # secrets:
-      #   token:
-      #     description: 'Toto Token'
-      #     required: true
+       registry_username:
+          type: string
+          required: true
+      secrets:
+        registry_token:
+          required: true
 
 jobs:
   e2e:
@@ -80,8 +82,8 @@ jobs:
     steps:
       - name: Test env variables and secrets
         run: |
-          echo ${{ secrets.TEST_REGISTRY_TOKEN }}
-          echo ${{ vars.TEST_REGISTRY_USERNAME }}
+          echo ${{ secrets.registry_token }}
+          echo ${{ inputs.registry_username }}
 
       - name: Checkout code
         uses: actions/checkout@v3
