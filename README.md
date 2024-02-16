@@ -12,3 +12,13 @@ Principle:
   ```
 
 For a detailed example, see https://github.com/epfl-si/edu-id-config/tree/main/.github/workflows
+
+Advantages :
+* ensure that all projects follow the same CI/CD process
+* simplified maintenance
+* version control and dependency management
+
+Drawbacks :
+* rewrite all workflows
+* additional complexity
+* flexibility ?
