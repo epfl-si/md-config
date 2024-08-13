@@ -15,6 +15,13 @@ on:
           description: "Project part"
           required: true
           type: string
+      secrets:
+        QUAY_ROBOT_PASSWORD:
+          required: true
+        GHCR_TOKEN:
+          required: true
+        GITHUB_TOKEN:
+          required: true
 
 jobs:
   deploy-dev:
