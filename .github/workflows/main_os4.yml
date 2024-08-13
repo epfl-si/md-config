@@ -1,0 +1,166 @@
+name: "Reusable CI for OS4"
+
+on:
+    workflow_call:
+      inputs:
+        service:
+          description: "Service name"
+          required: true
+          type: string
+        repo_config_name:
+          description: "Repository config name"
+          required: true
+          type: string
+        project_part:
+          description: "Project part"
+          required: true
+          type: string
+
+jobs:
+  deploy-dev:
+    name: Deploy to DEV
+    runs-on: self-hosted
+    environment: dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to quay-its
+        uses: docker/login-action@v2
+        with:
+          registry: quay-its.epfl.ch
+          username: ${{ inputs.service }}+github
+          password: ${{ secrets.QUAY_ROBOT_PASSWORD }}
+
+      - name: Build, tag and push
+        run: |
+          docker build -t ${{ github.event.repository.name }} .
+          docker image tag ${{ github.event.repository.name }}:latest quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:dev
+          docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:dev
+      
+      - name: Checkout to config repo
+        uses: actions/checkout@v3
+        with:
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          token: ${{ secrets.GHCR_TOKEN }}
+  
+      - name: Update image version in config repo
+        uses: fjogeleit/yaml-update-action@v0.13.1
+        with:
+          valueFile: ${{ inputs.project_part }}/base/deployment.yaml
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          message: "[auto] update DEV ${{ inputs.project_part }} image (${{ github.run_id }}-${{ github.run_number }})"
+          changes: |
+            {
+              "spec.template.metadata.annotations.deploymentTimestamp": "${{ github.run_id }}-${{ github.run_number }}",
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:dev"
+            }
+          commitChange: true
+          commitUserName: ${{ github.actor }}
+          token: ${{ secrets.GHCR_TOKEN }}
+  
+  tag:
+    name: Tag and realease
+    runs-on: ubuntu-latest
+    needs : [deploy-dev]
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      tag: "${{ steps.tagger.outputs.new-tag }}"
+    steps:
+      - uses: phish108/autotag-action@1.1.53
+        id: tagger
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        id: release
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "${{ steps.tagger.outputs.new-tag }}"
+          prerelease: false
+  
+  deploy-test:
+    name: Deploy to TEST
+    needs: [tag]
+    runs-on: self-hosted
+    environment: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to quay-its
+        uses: docker/login-action@v2
+        with:
+          registry: quay-its.epfl.ch
+          username: ${{ inputs.service }}+github
+          password: ${{ secrets.QUAY_ROBOT_PASSWORD }}
+
+      - name: Tag and push
+        run: |
+          docker image tag ${{ github.event.repository.name }}:latest quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:test-${{ needs.tag.outputs.tag }}
+          docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:test-${{ needs.tag.outputs.tag }}
+      
+      - name: Checkout to config repo
+        uses: actions/checkout@v3
+        with:
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          token: ${{ secrets.GHCR_TOKEN }}
+  
+      - name: Update image version in config repo
+        uses: fjogeleit/yaml-update-action@v0.13.1
+        with:
+          valueFile: ${{ inputs.project_part }}/overlays/test/deployment-patch.yaml
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          message: "[auto] update TEST ${{ inputs.project_part }} image version to ${{ needs.tag.outputs.tag }}"
+          changes: |
+            {
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:test-${{ needs.tag.outputs.tag }}"
+            }
+          commitChange: true
+          commitUserName: ${{ github.actor }}
+          token: ${{ secrets.GHCR_TOKEN }}
+  
+  deploy-prod:
+    # Reviewer is required (on GitHub) to deploy on this environement
+    name: Deploy to PROD
+    needs: [tag, deploy-test]
+    runs-on: self-hosted
+    environment: prod
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to quay-its
+        uses: docker/login-action@v2
+        with:
+          registry: quay-its.epfl.ch
+          username: ${{ inputs.service}}+github
+          password: ${{ secrets.QUAY_ROBOT_PASSWORD }}
+
+      - name: Tag and push
+        run: |
+          docker image tag ${{ github.event.repository.name }}:latest quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ needs.tag.outputs.tag }}
+          docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ needs.tag.outputs.tag }}
+      
+      - name: Checkout to config repo
+        uses: actions/checkout@v3
+        with:
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          token: ${{ secrets.GHCR_TOKEN }}
+  
+      - name: Update image version in config repo
+        uses: fjogeleit/yaml-update-action@v0.13.1
+        with:
+          valueFile: ${{ inputs.project_part }}/overlays/prod/deployment-patch.yaml
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          message: "[auto] update PROD ${{ inputs.project_part }} image version to ${{ needs.tag.outputs.tag }}"
+          changes: |
+            {
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ needs.tag.outputs.tag }}"
+            }
+          commitChange: true
+          commitUserName: ${{ github.actor }}
+          token: ${{ secrets.GHCR_TOKEN }}
