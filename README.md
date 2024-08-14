@@ -6,7 +6,9 @@
 Principle:
 
 * A `called workflow` is defined in this repository. It utilizes the inputs and secrets keywords to define inputs or secrets that will be passed from a `caller workflow`.
-* The `caller workflow` is defined in a separate repository.  
+* The `caller workflow` is defined in a separate repository.
+
+
   ```
   uses: epfl-si/md-infra/.github/workflows/frontend_ci.yml@main
   ```
