@@ -1,5 +1,4 @@
-## Reusable Workflows
-#### 🎯 Goal: Reusable workflows for different CI processes.
+## Reusable Workflows or different CI processes.
 
 **GitHub Documentation**: https://docs.github.com/en/actions/using-workflows/reusing-workflows#creating-a-reusable-workflow
 
