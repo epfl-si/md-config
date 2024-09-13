@@ -15,6 +15,11 @@ on:
           description: "Project part"
           required: true
           type: string
+        run_e2e_cypress:
+         description: "Boolean to run Cypress e2e test job"
+         required: false
+         default: false
+         type: boolean
       secrets:
         QUAY_ROBOT_PASSWORD:
           required: true
@@ -22,6 +27,64 @@ on:
           required: true
 
 jobs:
+  install:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.run_e2e_cypress }} == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cypress install
+        uses: cypress-io/github-action@v6
+        with:
+          # Disable running of tests within install job
+          runTests: false
+          install-command: npm install --force
+          build: npm run build
+
+      - name: Save build folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          if-no-files-found: error
+          path: dist
+
+  e2e:
+    name: E2E testing
+    runs-on: ubuntu-latest
+    needs: install
+    strategy:
+      # don't fail the entire matrix on failure
+      fail-fast: false
+      matrix:
+        # run copies of the current job in parallel
+        containers: [1, 2, 3]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download the build folder
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: dist
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          install-command: npm install --force
+          record: true
+          parallel: true
+          group: 'UI-Chrome'
+          start: npm start
+          wait-on: 'http://localhost:4200'
+          browser: chrome
+        env:
+          # For recording and parallelization to work you must set your CYPRESS_RECORD_KEY
+          # in GitHub repo → Settings → Secrets → Actions
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
+
   deploy-dev:
     name: Deploy to DEV
     runs-on: self-hosted
