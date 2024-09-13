@@ -16,10 +16,10 @@ on:
           required: true
           type: string
         run_e2e_cypress:
-         description: "Boolean to run Cypress e2e test job"
-         required: false
-         default: false
-         type: boolean
+          description: "Boolean to run Cypress e2e test job"
+          required: false
+          default: false
+          type: boolean
       secrets:
         QUAY_ROBOT_PASSWORD:
           required: true
