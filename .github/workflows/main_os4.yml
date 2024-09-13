@@ -25,6 +25,8 @@ on:
           required: true
         GHCR_TOKEN:
           required: true
+        CYPRESS_RECORD_KEY:
+          required: false
 
 jobs:
   install:
