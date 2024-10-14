@@ -106,7 +106,7 @@ jobs:
       - name: Override env variables for sub component
         if:  ${{ inputs.sub_component }}
         env:
-          image_name: ${{ github.event.repository.name }}-{{ inputs.sub_component }}
+          image_name: ${{ github.event.repository.name }}-${{ inputs.sub_component }}
         run: |
           echo $image_name
 
@@ -199,7 +199,7 @@ jobs:
       - name: Override env variables for sub component
         if:  ${{ inputs.sub_component }}
         env:
-          image_name: ${{ github.event.repository.name }}-{{ inputs.sub_component }}
+          image_name: ${{ github.event.repository.name }}-${{ inputs.sub_component }}
         run: |
           echo $image_name
 
@@ -255,7 +255,7 @@ jobs:
       - name: Override env variables for sub component
         if:  ${{ inputs.sub_component }}
         env:
-          image_name: ${{ github.event.repository.name }}-{{ inputs.sub_component }}
+          image_name: ${{ github.event.repository.name }}-${{ inputs.sub_component }}
         run: |
           echo $image_name
 
