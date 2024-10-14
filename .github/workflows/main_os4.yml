@@ -100,11 +100,15 @@ jobs:
       - name: Set env variables
         env:
           image_name: ${{ github.event.repository.name }}
+        run: |
+          echo $image_name
 
       - name: Override env variables for sub component
         if:  ${{ inputs.sub_component }}
         env:
           image_name: ${{ github.event.repository.name }}-{{ inputs.sub_component }}
+        run: |
+          echo $image_name
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -189,11 +193,15 @@ jobs:
       - name: Set env variables
         env:
           image_name: ${{ github.event.repository.name }}
+        run: |
+          echo $image_name
 
       - name: Override env variables for sub component
         if:  ${{ inputs.sub_component }}
         env:
           image_name: ${{ github.event.repository.name }}-{{ inputs.sub_component }}
+        run: |
+          echo $image_name
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -241,11 +249,15 @@ jobs:
       - name: Set env variables
         env:
           image_name: ${{ github.event.repository.name }}
+        run: |
+          echo $image_name
 
       - name: Override env variables for sub component
         if:  ${{ inputs.sub_component }}
         env:
           image_name: ${{ github.event.repository.name }}-{{ inputs.sub_component }}
+        run: |
+          echo $image_name
 
       - name: Checkout code
         uses: actions/checkout@v3
