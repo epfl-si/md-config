@@ -96,14 +96,17 @@ jobs:
     runs-on: self-hosted
     environment: dev
     env:
-      image_name: ${{ github.event.repository.name }}
+      IMAGE_NAME: ${{ github.event.repository.name }}
 
     steps:
       - name: Override env variables for sub component
         if:  ${{ inputs.sub_component }}
         run: |
-          echo "image_name=${{ github.event.repository.name }}-${{ inputs.sub_component }}" >> $GITHUB_ENV
-          echo $image_name
+          echo "IMAGE_NAME=${{ github.event.repository.name }}-${{ inputs.sub_component }}" >> $GITHUB_ENV
+
+      - name: Show image name
+        run: |
+          echo $IMAGE_NAME
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -125,17 +128,17 @@ jobs:
       - name: Build, tag and push
         if:  ${{ inputs.sub_component == '' }}
         run: |
-          docker build -t $image_name .
-          docker image tag $image_name:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev
-          docker push quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev
+          docker build -t $IMAGE_NAME .
+          docker image tag $IMAGE_NAME:latest quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:dev
+          docker push quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:dev
 
       - name: Build, tag and push for sub component
         if:  ${{ inputs.sub_component }}
         run: |
           cd ${{ inputs.sub_component }}
-          docker build -t $image_name .
-          docker image tag $image_name:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev
-          docker push quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev
+          docker build -t $IMAGE_NAME .
+          docker image tag $IMAGE_NAME:latest quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:dev
+          docker push quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:dev
       
       - name: Checkout to config repo
         uses: actions/checkout@v3
@@ -152,7 +155,7 @@ jobs:
           changes: |
             {
               "spec.template.metadata.annotations.deploymentTimestamp": "${{ github.run_id }}-${{ github.run_number }}",
-              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev"
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:dev"
             }
           commitChange: true
           commitUserName: ${{ github.actor }}
@@ -184,14 +187,14 @@ jobs:
     runs-on: self-hosted
     environment: test
     env:
-      image_name: ${{ github.event.repository.name }}
+      IMAGE_NAME: ${{ github.event.repository.name }}
 
     steps:
       - name: Override env variables for sub component
         if:  ${{ inputs.sub_component }}
         run: |
-          echo "image_name=${{ github.event.repository.name }}-${{ inputs.sub_component }}" >> $GITHUB_ENV
-          echo $image_name
+          echo "IMAGE_NAME=${{ github.event.repository.name }}-${{ inputs.sub_component }}" >> $GITHUB_ENV
+          echo $IMAGE_NAME
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -205,8 +208,8 @@ jobs:
 
       - name: Tag and push
         run: |
-          docker image tag $image_name:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:test-${{ needs.tag.outputs.tag }}
-          docker push quay-its.epfl.ch/${{ inputs.service }}/$image_name:test-${{ needs.tag.outputs.tag }}
+          docker image tag $IMAGE_NAME:latest quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:test-${{ needs.tag.outputs.tag }}
+          docker push quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:test-${{ needs.tag.outputs.tag }}
       
       - name: Checkout to config repo
         uses: actions/checkout@v3
@@ -222,7 +225,7 @@ jobs:
           message: "[auto] update TEST ${{ inputs.project_part }} image version to ${{ needs.tag.outputs.tag }}"
           changes: |
             {
-              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/$image_name:test-${{ needs.tag.outputs.tag }}"
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:test-${{ needs.tag.outputs.tag }}"
             }
           commitChange: true
           commitUserName: ${{ github.actor }}
@@ -235,14 +238,14 @@ jobs:
     runs-on: self-hosted
     environment: prod
     env:
-      image_name: ${{ github.event.repository.name }}
+      IMAGE_NAME: ${{ github.event.repository.name }}
 
     steps:
       - name: Override env variables for sub component
         if: ${{ inputs.sub_component }}
         run: |
-          echo "image_name=${{ github.event.repository.name }}-${{ inputs.sub_component }}" >> $GITHUB_ENV
-          echo $image_name
+          echo "IMAGE_NAME=${{ github.event.repository.name }}-${{ inputs.sub_component }}" >> $GITHUB_ENV
+          echo $IMAGE_NAME
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -256,8 +259,8 @@ jobs:
 
       - name: Tag and push
         run: |
-          docker image tag $image_name:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:${{ needs.tag.outputs.tag }}
-          docker push quay-its.epfl.ch/${{ inputs.service }}/$image_name:${{ needs.tag.outputs.tag }}
+          docker image tag $IMAGE_NAME:latest quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:${{ needs.tag.outputs.tag }}
+          docker push quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:${{ needs.tag.outputs.tag }}
       
       - name: Checkout to config repo
         uses: actions/checkout@v3
@@ -273,7 +276,7 @@ jobs:
           message: "[auto] update PROD ${{ inputs.project_part }} image version to ${{ needs.tag.outputs.tag }}"
           changes: |
             {
-              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/$image_name:${{ needs.tag.outputs.tag }}"
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:${{ needs.tag.outputs.tag }}"
             }
           commitChange: true
           commitUserName: ${{ github.actor }}
