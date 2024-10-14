@@ -155,7 +155,7 @@ jobs:
           changes: |
             {
               "spec.template.metadata.annotations.deploymentTimestamp": "${{ github.run_id }}-${{ github.run_number }}",
-              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:dev"
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ env.IMAGE_NAME }}:dev"
             }
           commitChange: true
           commitUserName: ${{ github.actor }}
@@ -225,7 +225,7 @@ jobs:
           message: "[auto] update TEST ${{ inputs.project_part }} image version to ${{ needs.tag.outputs.tag }}"
           changes: |
             {
-              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:test-${{ needs.tag.outputs.tag }}"
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ env.IMAGE_NAME }}:test-${{ needs.tag.outputs.tag }}"
             }
           commitChange: true
           commitUserName: ${{ github.actor }}
@@ -276,7 +276,7 @@ jobs:
           message: "[auto] update PROD ${{ inputs.project_part }} image version to ${{ needs.tag.outputs.tag }}"
           changes: |
             {
-              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/$IMAGE_NAME:${{ needs.tag.outputs.tag }}"
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ env.IMAGE_NAME }}:${{ needs.tag.outputs.tag }}"
             }
           commitChange: true
           commitUserName: ${{ github.actor }}
