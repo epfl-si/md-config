@@ -126,16 +126,16 @@ jobs:
       - name: Build, tag and push
         if:  ${{ inputs.sub_component == '' }}
         run: |
-          docker build -t ${{ github.event.repository.name }} .
-          docker image tag ${{ github.event.repository.name }}:latest quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:dev
-          docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:dev
+          docker build -t $image_name .
+          docker image tag $image_name:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev
+          docker push quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev
 
       - name: Build, tag and push for sub component
         if:  ${{ inputs.sub_component }}
         run: |
           cd ${{ inputs.sub_component }}
           docker build -t $image_name .
-          docker image tag ${{ github.event.repository.name }}-{{ inputs.sub_component }}:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev
+          docker image tag $image_name:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev
           docker push quay-its.epfl.ch/${{ inputs.service }}/$image_name:dev
       
       - name: Checkout to config repo
@@ -207,7 +207,7 @@ jobs:
 
       - name: Tag and push
         run: |
-          docker image tag ${{ github.event.repository.name }}:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:test-${{ needs.tag.outputs.tag }}
+          docker image tag $image_name:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:test-${{ needs.tag.outputs.tag }}
           docker push quay-its.epfl.ch/${{ inputs.service }}/$image_name:test-${{ needs.tag.outputs.tag }}
       
       - name: Checkout to config repo
@@ -259,7 +259,7 @@ jobs:
 
       - name: Tag and push
         run: |
-          docker image tag ${{ github.event.repository.name }}:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:${{ needs.tag.outputs.tag }}
+          docker image tag $image_name:latest quay-its.epfl.ch/${{ inputs.service }}/$image_name:${{ needs.tag.outputs.tag }}
           docker push quay-its.epfl.ch/${{ inputs.service }}/$image_name:${{ needs.tag.outputs.tag }}
       
       - name: Checkout to config repo
