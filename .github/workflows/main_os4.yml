@@ -15,6 +15,10 @@ on:
           description: "Project part"
           required: true
           type: string
+        alternative_project_part:
+          description: "Alternative project part"
+          required: false
+          type: string
         sub_component:
           description: "Project subcomponent"
           required: false
@@ -229,6 +233,21 @@ jobs:
           valueFile: ${{ inputs.project_part }}/overlays/test/deployment-patch.yaml
           repository: epfl-si/${{ inputs.repo_config_name }}-config
           message: "[auto] update TEST ${{ inputs.project_part }} image version to ${{ needs.tag.outputs.tag }}"
+          changes: |
+            {
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ env.IMAGE_NAME }}:test-${{ needs.tag.outputs.tag }}"
+            }
+          commitChange: true
+          commitUserName: ${{ github.actor }}
+          token: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Update image version in config repo (alternative part)
+        if: ${{ inputs.alternative_project_part }}
+        uses: fjogeleit/yaml-update-action@v0.13.1
+        with:
+          valueFile: ${{ inputs.alternative_project_part }}/overlays/test/deployment-patch.yaml
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          message: "[auto] update TEST ${{ inputs.alternative_project_part }} image version to ${{ needs.tag.outputs.tag }}"
           changes: |
             {
               "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ env.IMAGE_NAME }}:test-${{ needs.tag.outputs.tag }}"
