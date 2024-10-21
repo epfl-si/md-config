@@ -309,3 +309,18 @@ jobs:
           commitChange: true
           commitUserName: ${{ github.actor }}
           token: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Update image version in config repo (alternative part)
+        if: ${{ inputs.alternative_project_part }}
+        uses: fjogeleit/yaml-update-action@v0.13.1
+        with:
+          valueFile: ${{ inputs.alternative_project_part }}/overlays/prod/deployment-patch.yaml
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          message: "[auto] update PROD ${{ inputs.alternative_project_part }} image version to ${{ needs.tag.outputs.tag }}"
+          changes: |
+            {
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ env.IMAGE_NAME }}:${{ needs.tag.outputs.tag }}"
+            }
+          commitChange: true
+          commitUserName: ${{ github.actor }}
+          token: ${{ secrets.GHCR_TOKEN }}
