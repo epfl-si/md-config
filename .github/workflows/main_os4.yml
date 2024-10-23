@@ -39,7 +39,6 @@ jobs:
       - name: Cypress install
         uses: cypress-io/github-action@v6
         with:
-          # Disable running of tests within install job
           runTests: false
           install-command: npm install --force
           build: npm run build
@@ -56,10 +55,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: install
     strategy:
-      # don't fail the entire matrix on failure
       fail-fast: false
       matrix:
-        # run copies of the current job in parallel
         containers: [1, 2, 3]
     steps:
       - name: Checkout
@@ -82,8 +79,6 @@ jobs:
           wait-on: 'http://localhost:4200'
           browser: chrome
         env:
-          # For recording and parallelization to work you must set your CYPRESS_RECORD_KEY
-          # in GitHub repo → Settings → Secrets → Actions
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
@@ -106,15 +101,14 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GHCR_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build, tag and push
+      - name: Build, tag and push with unique tag
         run: |
-          docker build -t ${{ github.event.repository.name }} .
-          docker image tag ${{ github.event.repository.name }}:latest quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:dev
-          docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:dev
+          docker build -t ${{ github.event.repository.name }}:${{ github.sha }}.
+          docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ github.sha }}
       
       - name: Checkout to config repo
         uses: actions/checkout@v3
@@ -127,21 +121,52 @@ jobs:
         with:
           valueFile: ${{ inputs.project_part }}/base/deployment.yaml
           repository: epfl-si/${{ inputs.repo_config_name }}-config
-          message: "[auto] update DEV ${{ inputs.project_part }} image (${{ github.run_id }}-${{ github.run_number }})"
+          message: "[auto] update DEV ${{ inputs.project_part }} image (${{ github.sha }})"
           changes: |
             {
               "spec.template.metadata.annotations.deploymentTimestamp": "${{ github.run_id }}-${{ github.run_number }}",
-              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:dev"
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ github.sha }}"
             }
           commitChange: true
           commitUserName: ${{ github.actor }}
           token: ${{ secrets.GHCR_TOKEN }}
   
+  deploy-test:
+    name: Deploy to TEST
+    needs : [deploy-dev]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: self-hosted
+    environment: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Checkout to config repo
+        uses: actions/checkout@v3
+        with:
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          token: ${{ secrets.GHCR_TOKEN }}
+  
+      - name: Update image version in config repo
+        uses: fjogeleit/yaml-update-action@v0.13.1
+        with:
+          valueFile: ${{ inputs.project_part }}/overlays/test/deployment-patch.yaml
+          repository: epfl-si/${{ inputs.repo_config_name }}-config
+          message: "[auto] update TEST ${{ inputs.project_part }} image version to ${{ github.sha }}"
+          changes: |
+            {
+              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ github.sha }}"
+            }
+          commitChange: true
+          commitUserName: ${{ github.actor }}
+          token: ${{ secrets.GHCR_TOKEN }}
+          
   tag:
     name: Tag and release
     runs-on: ubuntu-latest
-    needs : [deploy-dev]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    needs : [deploy-test]
+    if: github.event.pull_request.merged == true && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     outputs:
       tag: "${{ steps.tagger.outputs.new-tag }}"
     steps:
@@ -157,52 +182,9 @@ jobs:
           automatic_release_tag: "${{ steps.tagger.outputs.new-tag }}"
           prerelease: false
   
-  deploy-test:
-    name: Deploy to TEST
-    needs: [tag]
-    runs-on: self-hosted
-    environment: test
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Login to quay-its
-        uses: docker/login-action@v2
-        with:
-          registry: quay-its.epfl.ch
-          username: ${{ inputs.service }}+github
-          password: ${{ secrets.QUAY_ROBOT_PASSWORD }}
-
-      - name: Tag and push
-        run: |
-          docker image tag ${{ github.event.repository.name }}:latest quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:test-${{ needs.tag.outputs.tag }}
-          docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:test-${{ needs.tag.outputs.tag }}
-      
-      - name: Checkout to config repo
-        uses: actions/checkout@v3
-        with:
-          repository: epfl-si/${{ inputs.repo_config_name }}-config
-          token: ${{ secrets.GHCR_TOKEN }}
-  
-      - name: Update image version in config repo
-        uses: fjogeleit/yaml-update-action@v0.13.1
-        with:
-          valueFile: ${{ inputs.project_part }}/overlays/test/deployment-patch.yaml
-          repository: epfl-si/${{ inputs.repo_config_name }}-config
-          message: "[auto] update TEST ${{ inputs.project_part }} image version to ${{ needs.tag.outputs.tag }}"
-          changes: |
-            {
-              "spec.template.spec.containers[0].image": "quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:test-${{ needs.tag.outputs.tag }}"
-            }
-          commitChange: true
-          commitUserName: ${{ github.actor }}
-          token: ${{ secrets.GHCR_TOKEN }}
-  
   deploy-prod:
-    # Reviewer is required (on GitHub) to deploy on this environement
     name: Deploy to PROD
-    needs: [tag, deploy-test]
+    needs: [tag]
     runs-on: self-hosted
     environment: prod
 
@@ -217,9 +199,9 @@ jobs:
           username: ${{ inputs.service}}+github
           password: ${{ secrets.QUAY_ROBOT_PASSWORD }}
 
-      - name: Tag and push
+      - name: Tag and push image to PROD with SemVer
         run: |
-          docker image tag ${{ github.event.repository.name }}:latest quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ needs.tag.outputs.tag }}
+          docker image tag quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ github.sha }}} quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ needs.tag.outputs.tag }}
           docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ needs.tag.outputs.tag }}
       
       - name: Checkout to config repo
