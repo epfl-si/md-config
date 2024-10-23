@@ -201,7 +201,7 @@ jobs:
 
       - name: Tag and push image to PROD with SemVer
         run: |
-          docker image tag quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ github.sha }}} quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ needs.tag.outputs.tag }}
+          docker image tag quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ github.sha }} quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ needs.tag.outputs.tag }}
           docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ needs.tag.outputs.tag }}
       
       - name: Checkout to config repo
