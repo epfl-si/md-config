@@ -107,7 +107,7 @@ jobs:
 
       - name: Build, tag and push with unique tag
         run: |
-          docker build -t ${{ github.event.repository.name }}:${{ github.sha }}.
+          docker build -t ${{ github.event.repository.name }}:${{ github.sha }} .
           docker push quay-its.epfl.ch/${{ inputs.service }}/${{ github.event.repository.name }}:${{ github.sha }}
       
       - name: Checkout to config repo
