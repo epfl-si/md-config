@@ -44,7 +44,7 @@ Ce job:
 - est exécuté seulement après que le job deploy-dev soit terminé avec succès et si le commit est fusionné dans la branche principale (`main` ou `master`)
 - met à jour le dépôt de config avec la nouvelle version de l'image pour l'environnement TEST (taggé avec le SHA)
 
-Cela permet de déployer l'application dans l'environnement de TEST)
+Cela permet de déployer l'application dans l'environnement de TEST
 
 #### 5. **Tag and Release**
 Ce job gère la publication des versions en prod suivant SemVer.
@@ -52,7 +52,7 @@ Ce job gère la publication des versions en prod suivant SemVer.
 - Si un commit est poussé dans `main` ou `master`, une nouvelle version SemVer est générée.
 - Le workflow utilise l'action `autotag` pour créer un tag basé sur le commit et déployer cette version sur GitHub en tant que release.
 
-S'il n'y a pas de nouveaux commits depuis ce dernier tag, l'action évite de créer un nouveau tag.
+S'il n'y a pas de nouveaux commits depuis le dernier tag, l'action évite de créer un nouveau tag.
 
 Il faut utiliser les tags #major, #minor, ou #patch dans les messages de commit, et l'action d'[auto-tagging](https://github.com/phish108/autotag-action) augmentera les versions en conséquence. Par défaut, c'est #patch qui est appliqué si aucun tag n'est spécifié.
 
